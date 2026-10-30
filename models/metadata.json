@@ -1,0 +1,88 @@
+{
+  "best_url_model": "Random Forest",
+  "best_text_model": "Naive Bayes",
+  "best_url_f1": 0.957,
+  "best_text_f1": 0.9611,
+  "url_features": [
+    "url_length",
+    "dot_count",
+    "hyphen_count",
+    "at_symbol",
+    "ip_address",
+    "https",
+    "subdomain_count",
+    "special_char_count",
+    "suspicious_word_count",
+    "domain_length"
+  ],
+  "url_dataset_rows": 4890,
+  "email_dataset_rows": 3017,
+  "url_models_benchmark": [
+    {
+      "Model": "Logistic Regression",
+      "Accuracy": 0.9468,
+      "Precision": 0.9374,
+      "Recall": 0.9599,
+      "F1": 0.9485,
+      "ROC_AUC": 0.9582
+    },
+    {
+      "Model": "Decision Tree",
+      "Accuracy": 0.953,
+      "Precision": 0.9503,
+      "Recall": 0.9579,
+      "F1": 0.9541,
+      "ROC_AUC": 0.9512
+    },
+    {
+      "Model": "Random Forest",
+      "Accuracy": 0.956,
+      "Precision": 0.956,
+      "Recall": 0.9579,
+      "F1": 0.957,
+      "ROC_AUC": 0.9583
+    },
+    {
+      "Model": "Gradient Boosting",
+      "Accuracy": 0.953,
+      "Precision": 0.9503,
+      "Recall": 0.9579,
+      "F1": 0.9541,
+      "ROC_AUC": 0.9595
+    }
+  ],
+  "text_models_benchmark": [
+    {
+      "Model": "Naive Bayes",
+      "Accuracy": 0.9487,
+      "Precision": 0.9527,
+      "Recall": 0.9696,
+      "F1": 0.9611,
+      "ROC_AUC": 0.9333
+    },
+    {
+      "Model": "Logistic Regression",
+      "Accuracy": 0.9487,
+      "Precision": 0.9527,
+      "Recall": 0.9696,
+      "F1": 0.9611,
+      "ROC_AUC": 0.9396
+    },
+    {
+      "Model": "Linear SVM",
+      "Accuracy": 0.9487,
+      "Precision": 0.9527,
+      "Recall": 0.9696,
+      "F1": 0.9611,
+      "ROC_AUC": 0.9386
+    },
+    {
+      "Model": "Random Forest",
+      "Accuracy": 0.9487,
+      "Precision": 0.9527,
+      "Recall": 0.9696,
+      "F1": 0.9611,
+      "ROC_AUC": 0.9373
+    }
+  ]
+}

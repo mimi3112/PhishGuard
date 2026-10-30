@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhishGuard — Simple Phishing Detector</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <!-- Clean Header -->
+  <header class="header">
+    <div class="nav-wrap">
+      <div class="logo">
+        <span class="logo-dot"></span>
+        <span class="logo-text">PhishGuard</span>
+      </div>
+
+      <nav class="nav-links">
+        <button class="nav-btn active" id="tabScannerBtn" onclick="switchTab('scanner')">Scanner</button>
+        <button class="nav-btn" id="tabBenchmarkBtn" onclick="switchTab('benchmark')">Model Comparison</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- VIEW 1: SCANNER -->
+    <div id="scannerView">
+      <div class="hero">
+        <h1>Check if a link or message is safe</h1>
+        <p>Paste a website link, an email, or an SMS message to see if it is legitimate or a phishing scam.</p>
+      </div>
+
+      <div class="box">
+        <!-- Quick Example Buttons -->
+        <div class="examples-row">
+          <span class="examples-label">Try an example:</span>
+          <button type="button" class="chip chip-phish" onclick="loadExample('bank_phish')">🚨 Bank Scam</button>
+          <button type="button" class="chip chip-phish" onclick="loadExample('delivery_scam')">📦 Delivery Scam</button>
+          <button type="button" class="chip chip-safe" onclick="loadExample('work_meeting')">✅ Meeting Note</button>
+          <button type="button" class="chip chip-safe" onclick="loadExample('safe_site')">🌐 Safe University</button>
+        </div>
+
+        <form id="checkForm" onsubmit="event.preventDefault(); checkRisk();">
+          <!-- URL Input -->
+          <div class="field">
+            <label for="urlInput">Website Link</label>
+            <div class="input-box">
+              <input 
+                type="text" 
+                id="urlInput" 
+                placeholder="https://example.com" 
+                autocomplete="off"
+                oninput="onUrlChange(this.value)"
+              />
+              <button type="button" id="clearUrlBtn" class="clear-icon" onclick="clearUrl()" title="Clear">✕</button>
+            </div>
+          </div>
+
+          <!-- URL LIVE PREVIEW -->
+          <div id="urlPreviewBox" class="preview-box hidden">
+            <div class="preview-bar">
+              <span id="previewSslIcon">🔒</span>
+              <span id="previewUrlText" class="preview-address">https://example.com</span>
+              <a id="previewExtLink" href="#" target="_blank" rel="noopener noreferrer" class="preview-ext-btn">Open in new tab ↗</a>
+            </div>
+
+            <div class="preview-info-grid">
+              <div>
+                <small>Protocol</small>
+                <b id="metaProtocol">HTTPS</b>
+              </div>
+              <div>
+                <small>Domain / Host</small>
+                <b id="metaHost">example.com</b>
+              </div>
+              <div>
+                <small>Host Type</small>
+                <b id="metaHostType">Domain Name</b>
+              </div>
+              <div>
+                <small>Extension</small>
+                <b id="metaTld">.com</b>
+              </div>
+            </div>
+
+            <div class="preview-frame-wrap">
+              <div class="preview-notice">
+                <span>Website Preview (Safe Sandbox)</span>
+                <small>Protected websites like banks may block preview for privacy</small>
+              </div>
+              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+          </div>
+
+          <!-- Message Text Input -->
+          <div class="field" style="margin-top: 20px;">
+            <label for="msgInput">Email or Message Text</label>
+            <textarea 
+              id="msgInput" 
+              rows="4" 
+              placeholder="Paste the email body, SMS text, or suspicious message here..."
+            ></textarea>
+          </div>
+
+          <!-- Buttons -->
+          <div class="buttons-row">
+            <button type="submit" class="btn btn-main" id="checkBtn">Check for Phishing</button>
+            <button type="button" class="btn btn-alt" onclick="resetAll()">Clear</button>
+          </div>
+          <p id="errorMsg" class="error-text"></p>
+        </form>
+      </div>
+
+      <!-- RESULTS BOX -->
+      <div id="resultBox" class="box result-box hidden">
+        <div class="result-top">
+          <div>
+            <span class="sub-label">Result</span>
+            <div class="verdict-line">
+              <span id="verdictIcon" class="v-icon">🟢</span>
+              <h2 id="verdictText" class="v-text">Safe</h2>
+            </div>
+            <p id="adviceText" class="advice-text"></p>
+          </div>
+
+          <div class="score-side">
+            <div class="score-num" id="riskNumber">0</div>
+            <span class="score-sub">/ 100 Risk</span>
+            <span class="time-tag" id="latencyTag">⚡ 12 ms</span>
+          </div>
+        </div>
+
+        <!-- Risk Bars -->
+        <div class="bars-grid">
+          <div class="bar-card">
+            <div class="bar-top">
+              <span>Link Risk</span>
+              <strong id="urlRiskLabel">—</strong>
+            </div>
+            <div class="bar-bg"><div class="bar-level" id="urlBarFill"></div></div>
+            <span class="model-hint" id="urlModelLabel">Model: Random Forest</span>
+          </div>
+
+          <div class="bar-card">
+            <div class="bar-top">
+              <span>Message Risk</span>
+              <strong id="textRiskLabel">—</strong>
+            </div>
+            <div class="bar-bg"><div class="bar-level" id="textBarFill"></div></div>
+            <span class="model-hint" id="textModelLabel">Model: Naive Bayes</span>
+          </div>
+        </div>
+
+        <!-- Explainable Reasons -->
+        <div class="reasons-wrap">
+          <h3>Why this was flagged:</h3>
+          <ul id="reasonsList" class="reasons-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: MODEL COMPARISON -->
+    <div id="benchmarkView" class="hidden">
+      <div class="hero">
+        <h1>Model Performance Comparison</h1>
+        <p>We tested 4 URL classification models and 4 Natural Language Processing (NLP) models on unseen test data. These metrics show how accurately each model predicts threats.</p>
+      </div>
+
+      <!-- URL Models Table -->
+      <div class="box">
+        <div class="table-title">
+          <h2>1. URL Phishing Detection (4 Models Tested)</h2>
+          <p>Evaluated on 978 test URLs with 10 structural features (length, dots, hyphens, IP host, HTTPS, keywords, etc.)</p>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table" id="urlTable">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1 Score</th>
+                <th>ROC-AUC</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Text Models Table -->
+      <div class="box" style="margin-top: 24px;">
+        <div class="table-title">
+          <h2>2. Message NLP Detection (4 Models Tested)</h2>
+          <p>Evaluated on 604 test messages using TF-IDF word frequency vectorization.</p>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table" id="textTable">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1 Score</th>
+                <th>ROC-AUC</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Charts & Visualizations -->
+      <div class="box" style="margin-top: 24px;">
+        <div class="table-title">
+          <h2>Model Evaluation Charts</h2>
+          <p>Charts generated from the evaluation pipelines.</p>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-item">
+            <h3>URL Model Comparison</h3>
+            <p>Accuracy, Precision, Recall, F1, and ROC-AUC for URL models.</p>
+            <img src="/results/url_model_comparison.png" alt="URL Model Chart" loading="lazy">
+          </div>
+
+          <div class="chart-item">
+            <h3>Message NLP Model Comparison</h3>
+            <p>Accuracy, Precision, Recall, F1, and ROC-AUC for text models.</p>
+            <img src="/results/text_model_comparison.png" alt="Text Model Chart" loading="lazy">
+          </div>
+
+          <div class="chart-item full">
+            <h3>ROC Curves (Receiver Operating Characteristic)</h3>
+            <p>True Positive Rate vs False Positive Rate for all models.</p>
+            <img src="/results/roc_curves.png" alt="ROC Curves" loading="lazy">
+          </div>
+
+          <div class="chart-item full">
+            <h3>Confusion Matrix Analysis</h3>
+            <p>Shows correct predictions vs misclassifications for best models.</p>
+            <img src="/results/confusion_matrices.png" alt="Confusion Matrix" loading="lazy">
+          </div>
+
+          <div class="chart-item full">
+            <h3>URL Feature Importance</h3>
+            <p>Which features had the biggest influence in identifying phishing URLs.</p>
+            <img src="/results/feature_importance.png" alt="Feature Importance" loading="lazy">
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>PhishGuard · Machine Learning Mini Project</p>
+  </footer>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
